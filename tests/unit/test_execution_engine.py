@@ -1,3 +1,4 @@
+
 from __future__ import annotations
 
 import asyncio
@@ -10,6 +11,7 @@ from forgeguard.core.exceptions import DuplicateToolError, ToolNotFoundError
 from forgeguard.core.task import Task
 from forgeguard.execution.engine import ExecutionEngine
 from forgeguard.execution.tool_call import ToolCall
+from forgeguard.policies.policy import Policy, PolicyEngine
 from forgeguard.tools.registry import ToolRegistry
 from forgeguard.tools.tool import Tool
 
@@ -64,7 +66,14 @@ def build_engine() -> ExecutionEngine:
         )
     )
 
-    return ExecutionEngine(registry)
+    policy_engine = PolicyEngine(
+        Policy(
+            allowed_tools=frozenset({"echo", "add", "multiply"}),
+            default_allow=False,
+        )
+    )
+
+    return ExecutionEngine(registry, policy_engine=policy_engine)
 
 
 @pytest.mark.asyncio
@@ -116,7 +125,11 @@ async def test_async_handler_execution() -> None:
         )
     )
 
-    engine = ExecutionEngine(registry)
+    engine = ExecutionEngine(
+        registry,
+        PolicyEngine(Policy(allowed_tools=frozenset({"async_echo"}))),
+    )
+
     task = Task(description="Async execution")
 
     result = await engine.execute(
@@ -145,7 +158,11 @@ async def test_sync_handler_does_not_block_event_loop() -> None:
         )
     )
 
-    engine = ExecutionEngine(registry)
+    engine = ExecutionEngine(
+        registry,
+        PolicyEngine(Policy(allowed_tools=frozenset({"slow"}))),
+    )
+
     task = Task(description="Event loop test")
 
     heartbeat = False
@@ -167,6 +184,7 @@ async def test_sync_handler_does_not_block_event_loop() -> None:
 
     assert heartbeat is True
     assert result.status == TaskStatus.COMPLETED
+    assert result.outputs["step_0"] == "finished"
 
 
 @pytest.mark.asyncio
@@ -181,7 +199,7 @@ async def test_invalid_input_missing_required_field() -> None:
 
     assert result.status == TaskStatus.FAILED
     assert result.outputs == {}
-    assert "ValidationError" in result.error
+    assert "ValidationError" in (result.error or "")
 
 
 @pytest.mark.asyncio
@@ -200,7 +218,7 @@ async def test_invalid_input_wrong_type() -> None:
     )
 
     assert result.status == TaskStatus.FAILED
-    assert "ValidationError" in result.error
+    assert "ValidationError" in (result.error or "")
 
 
 @pytest.mark.asyncio
@@ -222,7 +240,7 @@ async def test_invalid_input_extra_field() -> None:
     )
 
     assert result.status == TaskStatus.FAILED
-    assert "ValidationError" in result.error
+    assert "ValidationError" in (result.error or "")
 
 
 @pytest.mark.asyncio
@@ -244,7 +262,11 @@ async def test_invalid_tool_never_executes_handler() -> None:
         )
     )
 
-    engine = ExecutionEngine(registry)
+    engine = ExecutionEngine(
+        registry,
+        PolicyEngine(Policy(allowed_tools=frozenset({"protected"}))),
+    )
+
     task = Task(description="Validate before execution")
 
     result = await engine.execute(
@@ -272,7 +294,7 @@ async def test_unknown_tool_fails_task() -> None:
     )
 
     assert result.status == TaskStatus.FAILED
-    assert "ToolNotFoundError" in result.error
+    assert "ToolNotFoundError" in (result.error or "")
 
 
 @pytest.mark.asyncio
@@ -291,7 +313,11 @@ async def test_handler_exception_fails_task() -> None:
         )
     )
 
-    engine = ExecutionEngine(registry)
+    engine = ExecutionEngine(
+        registry,
+        PolicyEngine(Policy(allowed_tools=frozenset({"broken"}))),
+    )
+
     task = Task(description="Broken execution")
 
     result = await engine.execute(
@@ -305,7 +331,7 @@ async def test_handler_exception_fails_task() -> None:
     )
 
     assert result.status == TaskStatus.FAILED
-    assert "tool exploded" in result.error
+    assert "tool exploded" in (result.error or "")
 
 
 @pytest.mark.asyncio
@@ -324,7 +350,6 @@ async def test_partial_outputs_preserved_after_failure() -> None:
     assert result.outputs["step_0"] == 3
     assert "step_1" not in result.outputs
 
-
 @pytest.mark.asyncio
 async def test_execution_events_have_failure_record() -> None:
     engine = build_engine()
@@ -338,9 +363,8 @@ async def test_execution_events_have_failure_record() -> None:
     event_types = [event.event_type for event in result.events]
 
     assert "task_started" in event_types
-    assert "tool_call_started" in event_types
     assert "task_failed" in event_types
-
+    assert "tool_call_started" not in event_types
 
 def test_registry_rejects_duplicate_tools() -> None:
     registry = ToolRegistry()

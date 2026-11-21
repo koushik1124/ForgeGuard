@@ -1,3 +1,4 @@
+
 from __future__ import annotations
 
 from forgeguard.core.enums import TaskStatus
@@ -6,12 +7,18 @@ from forgeguard.events.event import ExecutionEvent
 from forgeguard.execution.context import ExecutionContext
 from forgeguard.execution.result import ExecutionResult
 from forgeguard.execution.tool_call import ToolCall
+from forgeguard.policies.policy import PolicyEngine
 from forgeguard.tools.registry import ToolRegistry
 
 
 class ExecutionEngine:
-    def __init__(self, registry: ToolRegistry) -> None:
+    def __init__(
+        self,
+        registry: ToolRegistry,
+        policy_engine: PolicyEngine | None = None,
+    ) -> None:
         self.registry = registry
+        self.policy_engine = policy_engine or PolicyEngine()
 
     async def execute(
         self,
@@ -32,6 +39,49 @@ class ExecutionEngine:
             )
 
             for index, call in enumerate(tool_calls):
+                # Resolve tool existence before authorization.
+                # Registry lookup does not execute the tool.
+                tool = self.registry.get(call.tool_name)
+
+                decision = self.policy_engine.evaluate(
+                    tool_name=call.tool_name,
+                    metadata={
+                        "task_id": task.task_id,
+                        "step": index,
+                        "call_id": call.call_id,
+                    },
+                )
+
+                events.append(
+                    ExecutionEvent.create(
+                        "policy_decision",
+                        {
+                            "tool_name": call.tool_name,
+                            "allowed": decision.allowed,
+                            "reason": decision.reason,
+                            "matched_rule": decision.matched_rule,
+                            "task_id": task.task_id,
+                            "step": index,
+                            "call_id": call.call_id,
+                        },
+                    )
+                )
+
+                if not decision.allowed:
+                    events.append(
+                        ExecutionEvent.create(
+                            "tool_call_rejected",
+                            {
+                                "tool_name": call.tool_name,
+                                "reason": decision.reason,
+                                "step": index,
+                                "call_id": call.call_id,
+                            },
+                        )
+                    )
+
+                    raise PermissionError(decision.reason)
+
                 events.append(
                     ExecutionEvent.create(
                         "tool_call_started",
@@ -42,8 +92,6 @@ class ExecutionEngine:
                         },
                     )
                 )
-
-                tool = self.registry.get(call.tool_name)
 
                 output = await tool.invoke(call.arguments)
 
@@ -68,8 +116,8 @@ class ExecutionEngine:
                 ExecutionEvent.create(
                     "task_completed",
                     {
-                    "task_id": task.task_id,
-                    "steps": len(tool_calls),
+                        "task_id": task.task_id,
+                        "steps": len(tool_calls),
                     },
                 )
             )
