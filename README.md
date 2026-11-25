@@ -1,5 +1,3 @@
-<p align="center">
-  <img src="https://img.shields.io/badge/🛡️-FORGEGUARD-blueviolet?style=for-the-badge&labelColor=0d1117" alt="ForgeGuard" />
 </p>
 
 <h1 align="center">🛡️ ForgeGuard</h1>
