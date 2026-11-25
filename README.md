@@ -40,7 +40,7 @@
   <img src="https://img.shields.io/badge/Backend_Tests-219%2B-2ea44f?style=for-the-badge" alt="Backend Tests" />
   <img src="https://img.shields.io/badge/Frontend_Tests-165%2B-61DAFB?style=for-the-badge" alt="Frontend Tests" />
   <img src="https://img.shields.io/badge/Type_Checking-Passing-success?style=for-the-badge" alt="Type Checking" />
-  <img src="https://img.shields.io/badge/Build-Production_Ready-success?style=for-the-badge" alt="Build" />
+  <img src="https://img.shields.io/badge/Build-Passing-success?style=for-the-badge" alt="Build" />
   <img src="https://img.shields.io/badge/Status-Feature_Frozen-orange?style=for-the-badge" alt="Feature Frozen" />
 </p>
 
