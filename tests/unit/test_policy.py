@@ -1,11 +1,8 @@
-
 from forgeguard.policies.policy import Policy, PolicyEngine
 
 
 def test_explicitly_allowed_tool() -> None:
-    engine = PolicyEngine(
-        Policy(allowed_tools=frozenset({"read_file"}))
-    )
+    engine = PolicyEngine(Policy(allowed_tools=frozenset({"read_file"})))
 
     decision = engine.evaluate("read_file")
 
@@ -14,9 +11,7 @@ def test_explicitly_allowed_tool() -> None:
 
 
 def test_explicitly_denied_tool() -> None:
-    engine = PolicyEngine(
-        Policy(denied_tools=frozenset({"delete_file"}))
-    )
+    engine = PolicyEngine(Policy(denied_tools=frozenset({"delete_file"})))
 
     decision = engine.evaluate("delete_file")
 
@@ -70,9 +65,7 @@ def test_explicit_allow_overrides_default_deny() -> None:
 
 
 def test_policy_decision_contains_metadata() -> None:
-    engine = PolicyEngine(
-        Policy(allowed_tools=frozenset({"search"}))
-    )
+    engine = PolicyEngine(Policy(allowed_tools=frozenset({"search"})))
 
     decision = engine.evaluate(
         "search",
@@ -84,9 +77,7 @@ def test_policy_decision_contains_metadata() -> None:
 
 
 def test_policy_decision_contains_timestamp() -> None:
-    engine = PolicyEngine(
-        Policy(allowed_tools=frozenset({"search"}))
-    )
+    engine = PolicyEngine(Policy(allowed_tools=frozenset({"search"})))
 
     decision = engine.evaluate("search")
 

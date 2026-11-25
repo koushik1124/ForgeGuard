@@ -14,7 +14,7 @@ _ALLOWED_TRANSITIONS = {
         TaskStatus.CANCELLED,
     },
     TaskStatus.COMPLETED: set(),
-    TaskStatus.FAILED: set(),
+    TaskStatus.FAILED: {TaskStatus.RUNNING},
     TaskStatus.CANCELLED: set(),
 }
 
@@ -38,15 +38,16 @@ class Task:
 
         if new_status not in allowed:
             raise InvalidStateTransitionError(
-                f"Cannot transition task from '{self.status.value}' "
-                f"to '{new_status.value}'."
+                f"Cannot transition task from '{self.status.value}' to '{new_status.value}'."
             )
 
         self.status = new_status
         now = utc_now()
 
         if new_status == TaskStatus.RUNNING:
-            self.started_at = now
+            if not self.started_at:
+                self.started_at = now
+            self.finished_at = None
 
         if new_status in {
             TaskStatus.COMPLETED,

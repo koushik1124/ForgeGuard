@@ -26,6 +26,9 @@ dev = [
     "mypy"
 ]
 
+[project.scripts]
+forgeguard = "forgeguard.cli:main"
+
 [tool.setuptools.packages.find]
 where = ["src"]
 

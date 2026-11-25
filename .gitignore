@@ -15,3 +15,20 @@ coverage/
 htmlcov/
 .vscode/
 .idea/
+# Frontend dependencies
+dashboard/node_modules/
+dashboard/dist/
+
+# SQLite runtime artifacts
+*-wal
+*-shm
+
+# Test artifacts
+.coverage
+coverage.xml
+
+# Logs
+*.log
+
+# Temporary workspace data
+forgeguard-test-workspace/

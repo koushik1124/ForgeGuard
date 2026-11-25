@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 import pytest
@@ -35,9 +34,7 @@ async def test_allowed_tool_executes() -> None:
 
     engine = ExecutionEngine(
         registry,
-        PolicyEngine(
-            Policy(allowed_tools=frozenset({"read_file"}))
-        ),
+        PolicyEngine(Policy(allowed_tools=frozenset({"read_file"}))),
     )
 
     task = Task(description="Read a file")
@@ -67,9 +64,7 @@ async def test_denied_tool_never_executes() -> None:
 
     engine = ExecutionEngine(
         registry,
-        PolicyEngine(
-            Policy(denied_tools=frozenset({"delete_file"}))
-        ),
+        PolicyEngine(Policy(denied_tools=frozenset({"delete_file"}))),
     )
 
     task = Task(description="Delete a file")
@@ -143,11 +138,7 @@ async def test_policy_denial_generates_audit_events() -> None:
     assert "tool_call_rejected" in event_types
     assert "task_failed" in event_types
 
-    decision_events = [
-        event
-        for event in result.events
-        if event.event_type == "policy_decision"
-    ]
+    decision_events = [event for event in result.events if event.event_type == "policy_decision"]
 
     assert decision_events[0].payload["allowed"] is False
     assert decision_events[0].payload["matched_rule"] == "default_deny"
@@ -175,9 +166,7 @@ async def test_denied_tool_does_not_run_later_tools() -> None:
 
     engine = ExecutionEngine(
         registry,
-        PolicyEngine(
-            Policy(allowed_tools=frozenset({"safe_tool"}))
-        ),
+        PolicyEngine(Policy(allowed_tools=frozenset({"safe_tool"}))),
     )
 
     task = Task(description="Run safe then blocked")

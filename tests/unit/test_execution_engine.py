@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 import asyncio
@@ -350,6 +349,7 @@ async def test_partial_outputs_preserved_after_failure() -> None:
     assert result.outputs["step_0"] == 3
     assert "step_1" not in result.outputs
 
+
 @pytest.mark.asyncio
 async def test_execution_events_have_failure_record() -> None:
     engine = build_engine()
@@ -365,6 +365,7 @@ async def test_execution_events_have_failure_record() -> None:
     assert "task_started" in event_types
     assert "task_failed" in event_types
     assert "tool_call_started" not in event_types
+
 
 def test_registry_rejects_duplicate_tools() -> None:
     registry = ToolRegistry()
